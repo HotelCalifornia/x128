@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo "please specify the path to the Stanford Core NLP root directory (no trailing slash)"
+    exit -1
+fi
+
+java -mx4g \
+     -cp "$1/*" \
+     edu.stanford.nlp.pipeline.StanfordCoreNLPServer \
+     -annotators "sentiment" \
+     -pos.model edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger \
+     -parse.model edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz \
+     -ner.model edu/stanford/nlp/models/ner/english.all.3class.caseless.distsim.crf.ser.gz,edu/stanford/nlp/models/ner/english.muc.7class.caseless.distsim.crf.ser.gz,edu/stanford/nlp/models/ner/english.conll.4class.caseless.distsim.crf.ser.gz
+     -outputFormat "json" \
+     -port 9000 \
+     -timeout 15000
