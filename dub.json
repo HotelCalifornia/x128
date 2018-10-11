@@ -1,0 +1,12 @@
+{
+	"name": "x128",
+	"authors": [
+		"hotelcalifornia"
+	],
+	"dependencies": {
+		"dscord": "~>0.0.11"
+	},
+	"description": "x64's big sister",
+	"copyright": "Copyright © 2018, hotelcalifornia",
+	"license": "MPL 2.0"
+}
