@@ -8,7 +8,9 @@ x128.dll
 x128.a
 x128.lib
 x128-test-*
+x128
 *.exe
 *.o
 *.obj
 *.lst
+*.dll
