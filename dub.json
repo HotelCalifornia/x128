@@ -4,7 +4,8 @@
 		"hotelcalifornia"
 	],
 	"dependencies": {
-		"discord-w": "~>0.0.1"
+		"discord-w": "~>0.0.1",
+		"vibe-d": "~>0.8.4"
 	},
 	"description": "x64's big sister",
 	"copyright": "Copyright © 2018, hotelcalifornia",
