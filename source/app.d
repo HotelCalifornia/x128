@@ -172,11 +172,11 @@ class X128 : DiscordGateway {
           format("Channel summary for #%s", x128.channel(channel_id).get.name),
         description : desc, color : color, fields
             : [
-            Embed.Field("Overall Wholesomeness", format("%f%% (%s)", wholesomeness * 100,
-                name)), Embed.Field("Positive", format("%d (%2f%%)", channel.positive,
-                pctPositive), true), Embed.Field("Neutral", format("%d (%2f%%)", channel.neutral,
+            Embed.Field("Overall Wholesomeness", format("%.2f%% (%s)", wholesomeness * 100,
+                name)), Embed.Field("Positive", format("%d (%.2f%%)", channel.positive,
+                pctPositive), true), Embed.Field("Neutral", format("%d (%.2f%%)", channel.neutral,
                 pctNeutral), true), Embed.Field("Negative",
-                format("%d (%2f%%)", channel.negative, pctNegative), true)]
+                format("%d (%.2f%%)", channel.negative, pctNegative), true)]
         };
         x128.channel(channel_id).sendMessage("", Nullable!Snowflake.init,
             No.tts, cast(Nullable!Embed) embed);
