@@ -4,11 +4,10 @@ import std.algorithm;
 import std.array;
 import std.conv : to;
 import std.format : format;
-
-/* import std.socket : InternetAddress, Socket, SocketException, SocketSet, TcpSocket; */
+import std.math : approxEqual;
 import std.regex;
 import std.stdio;
-import std.typecons : Nullable;
+import std.typecons : Flag, Nullable;
 import std.uni : toLower;
 
 import discord.w;
@@ -117,7 +116,7 @@ class X128 : DiscordGateway {
    * of a user
    *
    * @param channel_id the channel to check and in which send the message
-   * @param args
+   * @param args optionally specify a user about which to generate the summary
    */
   void summary(Snowflake channel_id, string[] args) @safe {
     auto channels = db.getCollection("local.channels");
@@ -127,7 +126,60 @@ class X128 : DiscordGateway {
     }
     else {
       if (args.length == 0) { // channel summary
+        const int totalMessages = channel.positive + channel.negative + channel.neutral;
+        const float pctPositive = (channel.positive / cast(float) totalMessages) * 100;
+        const float pctNeutral = (channel.neutral / cast(float) totalMessages) * 100;
+        const float pctNegative = (channel.negative / cast(float) totalMessages) * 100;
+        // man I really don't like the way it formats lines like this
+        const float wholesomeness = cast(float)(channel.positive - channel.negative) / cast(float)(
+            totalMessages - channel.neutral);
 
+        int color;
+        string desc;
+        string name;
+        if (wholesomeness >= 0.95) { // super wholesome
+          color = 0x00FF00;
+          desc = "Amazing! You really don't need me here!";
+          name = "Super Wholesome";
+        }
+        else if (0.50 < wholesomeness && wholesomeness < 0.95) { // mostly wholesome
+          color = 0x006300;
+          desc = "That's pretty wholesome! Keep it up!";
+          name = "Mostly Wholesome";
+        }
+        else if (approxEqual(wholesomeness, 0)) { // super neutral (need to check before mostly neutral)
+          color = 0xFFFFFF;
+          desc = "May I present the new Supreme Justices of the United States of America?";
+          name = "Super Neutral";
+        }
+        else if (-0.50 <= wholesomeness && wholesomeness <= 0.50) { // mostly neutral
+          color = 0xFFFF00;
+          desc = "What is this, a channel full of judges? Could be worse...";
+          name = "Mostly Neutral";
+        }
+        else if (-0.95 < wholesomeness && wholesomeness < -0.50) { // mostly toxic
+          color = 0xFF8800;
+          desc = "This channel is pretty toxic... You can do better.";
+          name = "Mostly Toxic";
+        }
+        else { // super toxic
+          color = 0xFF0000;
+          desc = "You guys are really horrible. There's probably no hope.";
+          name = "Super Toxic";
+        }
+        Embed embed = {
+        title:
+          format("Channel summary for #%s", x128.channel(channel_id).get.name),
+        description : desc, color : color, fields
+            : [
+            Embed.Field("Overall Wholesomeness", format("%f%% (%s)", wholesomeness * 100,
+                name)), Embed.Field("Positive", format("%d (%2f%%)", channel.positive,
+                pctPositive), true), Embed.Field("Neutral", format("%d (%2f%%)", channel.neutral,
+                pctNeutral), true), Embed.Field("Negative",
+                format("%d (%2f%%)", channel.negative, pctNegative), true)]
+        };
+        x128.channel(channel_id).sendMessage("", Nullable!Snowflake.init,
+            No.tts, cast(Nullable!Embed) embed);
       }
     }
   }
@@ -142,7 +194,8 @@ class X128 : DiscordGateway {
     super(token);
     commands = ["ping" : Command(&ping, "replies with pong", ":> ping"), "help" : Command(&help,
         "prints this message. if a command is specified, print a message describing its use",
-        ":> help [command]")];
+        ":> help [command]"), "summary" : Command(&summary, "print a summary of the wholesomeness of the current channel. if a user is specified, summarize their wholesomeness instead",
+        ":> summary [user]")];
   }
 
   /**
@@ -190,9 +243,9 @@ class X128 : DiscordGateway {
     * @param author the author of the message that was just analyzed
     */
   void userSentiment(string sentiment, User author) @safe {
-    const auto users = db.getCollection("local.users");
+    auto users = db.getCollection("local.users");
 
-    auto user = users.findOne!WholesomeUser(["usr.uid" : author.id.toString()]);
+    auto user = users.findOne!WholesomeUser(["usr.uid" : author.id]);
     if (user.isNull) {
       WholesomeUser usr = {
       id:
@@ -200,10 +253,9 @@ class X128 : DiscordGateway {
         author.id, name : author.username}
       };
       users.insert(usr);
-      user = users.findOne!WholesomeUser(["usr.uid" : author.id.toString()]);
+      user = users.findOne!WholesomeUser(["usr.uid" : author.id]);
     }
-    users.update(["usr.uid" : author.id.toString()], ["$set"
-        : sentimentIncr!WholesomeUser(sentiment, user)]);
+    users.update(["usr.uid" : author.id], ["$set" : sentimentIncr!WholesomeUser(sentiment, user)]);
   }
 
   /**
